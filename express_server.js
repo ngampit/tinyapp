@@ -14,6 +14,7 @@ const urlDatabase = {
 };
 
 const bodyParser = require('body-parser');
+const { get } = require("request");
 app.use(bodyParser.urlencoded({extended: true}));
 app.get('/', (req, res) => {
   res.send("Hello!");
@@ -21,6 +22,15 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
+
+function generateRandomString(length) {
+  const randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++ ) {
+    result += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
+  }
+  return result;
+}  
 
 app.get('/urls.json',(req,res)=>{
   res.json(urlDatabase);
@@ -49,7 +59,7 @@ app.get('/urls/new', (req,res)=>{
 })
 
 app.get("/urls/:shortURL", (req, res) => {
-    const templateVars = { shortURL: req.params.shortURL, longURL: "http://www.lighthouselabs.ca" };
+    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
     res.render("urls_show", templateVars);
 });
 
@@ -58,22 +68,31 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls", (req, res) => {
     //console.log(req.body); // Log the POST request body to the console
     
-    const longUrlContainer = req.body.longURL;
-    const shortUrlContainer = generateRandomString(6);
+    const longURL= req.body.longURL;
+    const shortURL = generateRandomString(6);
  
-    urlDatabase[shortUrlContainer] = longUrlContainer;
+    urlDatabase[shortURL] = longURL;
         
-    res.send("Ok");         // Respond with 'Ok' (we will replace this)
-  });
+    res.redirect(`/urls/${shortURL}`);         // Respond with 'Ok' (we will replace this)
+});
 
-function generateRandomString(length) {
-    const randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++ ) {
-        result += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
-    }
-    return result;
-}  
+
+
+app.get("/u/:shortURL", (req, res) => {
+    const longURL = urlDatabase[req.params.shortURL];
+    res.redirect(longURL);
+  }); 
+
+app.post("/urls/:shortURL/delete" , (req,res) => {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect('/urls');
+})
+
+app.post("/urls/:id" , (req,res) => {
+    console.log(req.params);
+    urlDatabase[req.params.id] = req.body.longURL;
+    res.redirect('/urls');
+})
 
 });
 
